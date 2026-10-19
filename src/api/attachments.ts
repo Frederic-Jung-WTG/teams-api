@@ -129,6 +129,12 @@ export async function fetchAmsImage(
   amsObjectId: string,
   view: "imgo" | "imgpsh_fullsize_anim" = "imgo",
 ): Promise<{ data: Buffer; contentType: string; size: number }> {
+  if (!token.skypeToken) {
+    throw new Error(
+      "Skype token is required for image download but the Teams web client did not issue one.",
+    );
+  }
+
   const url = `${AMS_BASE}/${amsObjectId}/views/${view}`;
 
   const response = await fetchWithRetry(url, {

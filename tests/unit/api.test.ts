@@ -1552,6 +1552,16 @@ describe("parseVtt", () => {
 });
 
 describe("fetchTranscriptVtt", () => {
+  it("should reject without calling AMS when no skype token is available", async () => {
+    await expect(
+      fetchTranscriptVtt(
+        { skypeToken: "", chatBearerToken: "bearer", region: "apac" },
+        "https://as-prod.asyncgw.teams.microsoft.com/v1/objects/abc123/views/transcript",
+      ),
+    ).rejects.toThrow("Skype token is required for transcript download");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
   it("should fetch VTT content using skype_token auth header", async () => {
     mockFetchTextResponse(sampleVtt);
 

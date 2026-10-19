@@ -566,7 +566,7 @@ The Teams Chat Service URL varies by region. Login-based and debug-session auth 
 - **File attachments are not supported from remote AI hosts** (e.g. Claude.ai). The MCP server runs locally on your machine, so `--file` / `--image` paths must exist on your local filesystem. Cloud-hosted AI clients run in isolated containers and cannot access local paths. Use a local MCP client (Claude Desktop, Cursor, VS Code) or the CLI for file attachments.
 - Token lifetime is ~24 hours. After expiry, you must re-acquire.
 - The Teams Chat Service REST API is undocumented and may change without notice.
-- When the Teams web client no longer issues a skype token, only the Chat Service tools (conversations, messages, members, reactions) use the Bearer-authenticated `teams.cloud.microsoft/api/chatsvc` endpoint. File attachment download/upload and transcripts still require a skype token.
+- When the Teams web client no longer issues a skype token, the Chat Service tools (conversations, messages, members, reactions) use the Bearer-authenticated `teams.cloud.microsoft/api/chatsvc` endpoint. Inline image download (`download-file` for images, `describe-image`) and meeting transcripts still require a skype token and fail with a clear error in that mode.
 - FIDO2 auto-login is never selected automatically. Enable it with `--auto` or `TEAMS_AUTO=true`; add `--headless` or `TEAMS_HEADLESS=true` only when unattended browser auth is wanted.
 - Auto-login requires macOS, system Chrome, a platform authenticator, and a FIDO2 passkey. On other platforms, use interactive login (`--login`) instead.
 - The members API returns empty display names for 1:1 chat participants. Use `findOneOnOneConversation()` to resolve names from message history.

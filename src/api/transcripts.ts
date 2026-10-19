@@ -97,6 +97,12 @@ export async function fetchTranscriptVtt(
   token: TeamsToken,
   amsTranscriptUrl: string,
 ): Promise<string> {
+  if (!token.skypeToken) {
+    throw new Error(
+      "Skype token is required for transcript download but the Teams web client did not issue one.",
+    );
+  }
+
   const response = await fetchWithRetry(amsTranscriptUrl, {
     headers: {
       Authorization: `skype_token ${token.skypeToken}`,

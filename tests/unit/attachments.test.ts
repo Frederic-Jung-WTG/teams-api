@@ -231,6 +231,19 @@ describe("buildAmsImageTag", () => {
 });
 
 describe("fetchAmsImage", () => {
+  it("rejects without calling AMS when no skype token is available", async () => {
+    const mockFetch = vi.fn();
+    globalThis.fetch = mockFetch;
+
+    await expect(
+      fetchAmsImage(
+        { skypeToken: "", chatBearerToken: "bearer", region: "apac" },
+        "test-object-id",
+      ),
+    ).rejects.toThrow("Skype token is required for image download");
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it("fetches an image with skype token auth", async () => {
     const imageBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]); // PNG magic bytes
     const mockFetch = vi.fn().mockResolvedValue({

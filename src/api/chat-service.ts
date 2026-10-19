@@ -1,7 +1,8 @@
 /**
  * REST API layer for the Teams Chat Service.
  *
- * All HTTP calls to {region}.ng.msg.teams.microsoft.com/v1 are here.
+ * All HTTP calls to {region}.ng.msg.teams.microsoft.com/v1 (skype token) or
+ * teams.cloud.microsoft/api/chatsvc/{region}/v1 (Bearer token) are here.
  * This module is stateless — every function takes a TeamsToken explicitly.
  */
 
