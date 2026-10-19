@@ -13,6 +13,7 @@ import type {
 } from "../types.js";
 import { fetchWithRetry, ApiAuthError } from "./common.js";
 import { fetchMessagesPage } from "./chat-service.js";
+import { amsReadAuthorization } from "./attachments.js";
 import { decodeHtmlEntities } from "../html-utils.js";
 
 /**
@@ -90,22 +91,17 @@ export function parseVtt(vttContent: string): TranscriptEntry[] {
 /**
  * Fetch a transcript from the AMS (Async Media Service).
  *
- * Uses `Authorization: skype_token <token>` header (note: different format
- * from the Chat Service `Authentication: skypetoken=<token>` header).
+ * Uses `Authorization: skype_token <token>` (note: different format from the
+ * Chat Service `Authentication: skypetoken=<token>` header), or a Bearer
+ * token when no skype token is available.
  */
 export async function fetchTranscriptVtt(
   token: TeamsToken,
   amsTranscriptUrl: string,
 ): Promise<string> {
-  if (!token.skypeToken) {
-    throw new Error(
-      "Skype token is required for transcript download but the Teams web client did not issue one.",
-    );
-  }
-
   const response = await fetchWithRetry(amsTranscriptUrl, {
     headers: {
-      Authorization: `skype_token ${token.skypeToken}`,
+      Authorization: amsReadAuthorization(token),
     },
   });
 

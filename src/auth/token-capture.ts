@@ -27,7 +27,7 @@ function isChatServiceRequest(requestUrl: string): boolean {
 }
 
 /** Chat Service calls made by the current Teams web client (Bearer-authenticated). */
-function isWebChatServiceRequest(requestUrl: string): boolean {
+export function isWebChatServiceRequest(requestUrl: string): boolean {
   try {
     const url = new URL(requestUrl);
     return (
