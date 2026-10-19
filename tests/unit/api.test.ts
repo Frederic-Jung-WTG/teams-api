@@ -128,6 +128,34 @@ describe("fetchConversations", () => {
     );
   });
 
+  it("should use the teams.cloud.microsoft endpoint with Bearer auth when no skype token is issued", async () => {
+    mockFetchResponse({ conversations: [] });
+
+    await fetchConversations(
+      { skypeToken: "", chatBearerToken: "test-chat-bearer", region: "apac" },
+      100,
+    );
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://teams.cloud.microsoft/api/chatsvc/apac/v1/users/ME/conversations?view=mychats&pageSize=100",
+      { headers: { Authorization: "Bearer test-chat-bearer" } },
+    );
+  });
+
+  it("should prefer the skype token when both tokens are present", async () => {
+    mockFetchResponse({ conversations: [] });
+
+    await fetchConversations(
+      { ...testToken, chatBearerToken: "test-chat-bearer" },
+      100,
+    );
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://apac.ng.msg.teams.microsoft.com/v1/users/ME/conversations?view=mychats&pageSize=100",
+      { headers: { Authentication: "skypetoken=test-token-abc123" } },
+    );
+  });
+
   it("should throw on non-OK response", async () => {
     mockFetchResponse({}, 401);
 

@@ -28,13 +28,16 @@ import MarkdownIt from "markdown-it";
 
 const markdownRenderer = new MarkdownIt({ html: true, breaks: true });
 
-const chatServiceBase = (region: string) =>
-  `https://${region}.ng.msg.teams.microsoft.com/v1`;
+const chatServiceBase = (token: TeamsToken) =>
+  token.skypeToken
+    ? `https://${token.region}.ng.msg.teams.microsoft.com/v1`
+    : `https://teams.cloud.microsoft/api/chatsvc/${token.region}/v1`;
 
 function authHeaders(token: TeamsToken): Record<string, string> {
-  return {
-    Authentication: `skypetoken=${token.skypeToken}`,
-  };
+  if (token.skypeToken) {
+    return { Authentication: `skypetoken=${token.skypeToken}` };
+  }
+  return { Authorization: `Bearer ${token.chatBearerToken}` };
 }
 
 /**
@@ -54,7 +57,7 @@ export async function fetchConversationsPage(
   pageSize: number,
   backwardLink?: string,
 ): Promise<ConversationsPage> {
-  const baseUrl = chatServiceBase(token.region);
+  const baseUrl = chatServiceBase(token);
   const firstPageUrl = `${baseUrl}/users/ME/conversations?view=mychats&pageSize=${pageSize}`;
   const url = new URL(backwardLink ?? firstPageUrl, firstPageUrl);
   if (url.origin !== new URL(baseUrl).origin) {
@@ -118,7 +121,7 @@ export async function fetchMessagesPage(
 ): Promise<MessagesPage> {
   const url =
     backwardLink ??
-    `${chatServiceBase(token.region)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages?pageSize=${pageSize}`;
+    `${chatServiceBase(token)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages?pageSize=${pageSize}`;
 
   const response = await fetchWithRetry(url, { headers: authHeaders(token) });
   if (!response.ok) {
@@ -153,7 +156,7 @@ export async function fetchMembers(
   token: TeamsToken,
   conversationId: string,
 ): Promise<Member[]> {
-  const url = `${chatServiceBase(token.region)}/threads/${encodeURIComponent(conversationId)}/members`;
+  const url = `${chatServiceBase(token)}/threads/${encodeURIComponent(conversationId)}/members`;
 
   const response = await fetchWithRetry(url, { headers: authHeaders(token) });
   if (!response.ok) {
@@ -254,7 +257,7 @@ export async function postMessage(
   subject?: string,
   quoteHtml?: string,
 ): Promise<SentMessage> {
-  const url = `${chatServiceBase(token.region)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages`;
+  const url = `${chatServiceBase(token)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages`;
 
   const clientMessageId = String(Date.now());
   let { resolvedContent, messagetype, contenttype } = resolveMessageContent(
@@ -336,7 +339,7 @@ export async function editMessage(
   format: MessageFormat = "markdown",
   quoteHtml?: string,
 ): Promise<EditedMessage> {
-  const url = `${chatServiceBase(token.region)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`;
+  const url = `${chatServiceBase(token)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`;
 
   let { resolvedContent, messagetype, contenttype } = resolveMessageContent(
     content,
@@ -406,7 +409,7 @@ export async function deleteMessage(
   conversationId: string,
   messageId: string,
 ): Promise<DeletedMessage> {
-  const url = `${chatServiceBase(token.region)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`;
+  const url = `${chatServiceBase(token)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`;
 
   const response = await fetchWithRetry(url, {
     method: "DELETE",
@@ -450,7 +453,7 @@ export async function postScheduledMessage(
   filesJson?: string,
   subject?: string,
 ): Promise<ScheduledMessage> {
-  const url = `${chatServiceBase(token.region)}/users/ME/drafts`;
+  const url = `${chatServiceBase(token)}/users/ME/drafts`;
 
   const clientMessageId = String(Date.now());
   const { resolvedContent, messagetype } = resolveMessageContent(
@@ -546,7 +549,7 @@ export async function addReaction(
   messageId: string,
   reactionKey: string,
 ): Promise<ReactionResult> {
-  const url = `${chatServiceBase(token.region)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/properties?name=emotions`;
+  const url = `${chatServiceBase(token)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/properties?name=emotions`;
 
   const body = {
     emotions: { key: reactionKey, value: messageId },
@@ -588,7 +591,7 @@ export async function removeReaction(
   messageId: string,
   reactionKey: string,
 ): Promise<ReactionResult> {
-  const url = `${chatServiceBase(token.region)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/properties?name=emotions`;
+  const url = `${chatServiceBase(token)}/users/ME/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/properties?name=emotions`;
 
   const body = {
     emotions: { key: reactionKey, value: messageId },
@@ -625,7 +628,7 @@ export async function removeReaction(
 export async function fetchUserProperties(
   token: TeamsToken,
 ): Promise<Record<string, unknown>> {
-  const url = `${chatServiceBase(token.region)}/users/ME/properties`;
+  const url = `${chatServiceBase(token)}/users/ME/properties`;
   const response = await fetchWithRetry(url, { headers: authHeaders(token) });
 
   if (!response.ok) {

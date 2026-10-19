@@ -384,7 +384,10 @@ export class TeamsClient {
     const cacheKey = options?.email ?? DEFAULT_ACCOUNT;
     const cachedToken = await loadToken(cacheKey);
     if (cachedToken) {
-      if (!cachedToken.skypeToken || !cachedToken.region) {
+      if (
+        (!cachedToken.skypeToken && !cachedToken.chatBearerToken) ||
+        !cachedToken.region
+      ) {
         log("Cached token is missing required fields, re-authenticating...");
         await clearToken(cacheKey);
       } else {
