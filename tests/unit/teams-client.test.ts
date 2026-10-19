@@ -568,6 +568,49 @@ describe("findOneOnOneConversation", () => {
     expect(result!.memberDisplayName).toContain("Alice Smith");
   });
 
+  it("should return the self-chat when it is missing from the conversation list", async () => {
+    mockedApi.fetchConversations.mockResolvedValue([
+      makeConversation({
+        id: "19:my-uuid_other-uuid@unq.gbl.spaces",
+        threadType: "chat",
+        topic: "",
+      }),
+    ]);
+    mockedApi.fetchUserProperties.mockResolvedValue({
+      userDetails: JSON.stringify({ name: "Alice Smith" }),
+    });
+
+    const client = TeamsClient.fromToken(
+      "token",
+      "apac",
+      "bearer",
+      "substrate-token",
+    );
+    const result = await client.findOneOnOneConversation("Alice Smith");
+
+    expect(result).toEqual({
+      conversationId: "48:notes",
+      memberDisplayName: "Alice Smith (self)",
+    });
+    expect(mockedApi.searchPeople).not.toHaveBeenCalled();
+  });
+
+  it("should not treat an unresolved current user name as a self-chat match", async () => {
+    mockedApi.fetchConversations.mockResolvedValue([]);
+    mockedApi.fetchUserProperties.mockResolvedValue({});
+    mockedApi.searchPeople.mockResolvedValue([]);
+
+    const client = TeamsClient.fromToken(
+      "token",
+      "apac",
+      "bearer",
+      "substrate-token",
+    );
+    const result = await client.findOneOnOneConversation("user");
+
+    expect(result?.conversationId).not.toBe("48:notes");
+  });
+
   it("should find 1:1 chat via Substrate search when token is available", async () => {
     mockedApi.fetchConversations.mockResolvedValue([
       makeConversation({ id: "19:chat1", threadType: "chat", topic: "" }),
