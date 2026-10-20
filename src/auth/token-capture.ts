@@ -149,7 +149,12 @@ export async function captureTokensFromPage(
       }
       chatBearerTimeout = setTimeout(() => {
         if (!skypeToken && chatBearerToken) {
-          log("No skype token issued, using chat Bearer token");
+          if (fallbackSkypeToken) {
+            skypeToken = fallbackSkypeToken;
+            log("Using fallback Skype token from non-chat request headers");
+          } else {
+            log("No skype token issued, using chat Bearer token");
+          }
           resolveWithToken();
         }
       }, FALLBACK_SKYPE_TOKEN_GRACE_PERIOD);

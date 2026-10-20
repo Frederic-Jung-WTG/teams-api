@@ -115,6 +115,52 @@ describe("captureTokensFromPage", () => {
     }
   });
 
+  it.each(["before", "after"])(
+    "prefers a non-chat Skype token arriving %s the chat Bearer token",
+    async (arrivalOrder) => {
+      vi.useFakeTimers();
+      try {
+        const skypeRequest = {
+          requestId: "profile-request",
+          request: {
+            url: "https://teams.cloud.microsoft/api/mt/apac/beta/users/fetchShortProfile",
+            headers: { "x-skypetoken": "skypetoken=fallback-token" },
+          },
+        };
+        const bearerRequest = {
+          requestId: "chat-request",
+          request: {
+            url: "https://teams.cloud.microsoft/api/chatsvc/apac/v1/users/ME/conversations",
+            headers: { authorization: "Bearer chat-bearer-token" },
+          },
+        };
+        const requests =
+          arrivalOrder === "before"
+            ? [skypeRequest, bearerRequest]
+            : [bearerRequest, skypeRequest];
+        const { page } = createPageStub([
+          ...requests,
+          {
+            requestId: "search-request",
+            request: {
+              url: "https://substrate.office.com/search/api/v1/suggestions",
+              headers: { authorization: "Bearer substrate-token" },
+            },
+          },
+        ]);
+        const pending = captureTokensFromPage(page, vi.fn(), 90 * 1_000);
+
+        await vi.advanceTimersByTimeAsync(5 * 1_000);
+        const token = await pending;
+
+        expect(token.skypeToken).toBe("fallback-token");
+        expect(token.chatBearerToken).toBeUndefined();
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it("prefers the Skype token when both a chat Bearer token and a Skype token are seen", async () => {
     const { page } = createPageStub([
       {

@@ -506,12 +506,24 @@ export class TeamsClient {
   /**
    * Create a client from an existing token bundle.
    *
+   * Pass a complete `TeamsToken` to restore all captured tokens, including
+   * `chatBearerToken` for accounts that do not issue a Skype token.
    * `bearerToken` enables profile/member resolution and `substrateToken`
    * enables reliable people/chat search. Both are optional; basic chat
-   * operations only require `skypeToken`.
+   * operations require either `skypeToken` or `chatBearerToken`.
    */
+  static fromToken(token: TeamsToken): TeamsClient;
   static fromToken(
     skypeToken: string,
+    region?: string,
+    bearerToken?: string,
+    substrateToken?: string,
+    amsToken?: string,
+    sharePointToken?: string,
+    sharePointHost?: string,
+  ): TeamsClient;
+  static fromToken(
+    token: TeamsToken | string,
     region = DEFAULT_TEAMS_REGION,
     bearerToken?: string,
     substrateToken?: string,
@@ -519,8 +531,12 @@ export class TeamsClient {
     sharePointToken?: string,
     sharePointHost?: string,
   ): TeamsClient {
+    if (typeof token !== "string") {
+      return new TeamsClient({ ...token });
+    }
+
     return new TeamsClient({
-      skypeToken,
+      skypeToken: token,
       region,
       bearerToken,
       substrateToken,
